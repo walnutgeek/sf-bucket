@@ -38,6 +38,26 @@ public class SnowflakeBucketDAO implements BucketDAO {
 
     @Override
     public Bucket open(UUID id) {
-        throw new UnsupportedOperationException("Not yet implemented");
+        String sql = "SELECT id, created_by, description, created_at FROM buckets WHERE id = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, id.toString());
+            try (var rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    throw new IllegalArgumentException("Bucket not found: " + id);
+                }
+                return new SnowflakeBucket(
+                    dataSource,
+                    UUID.fromString(rs.getString("id")),
+                    rs.getString("created_by"),
+                    rs.getString("description"),
+                    rs.getTimestamp("created_at").toInstant()
+                );
+            }
+        } catch (IllegalArgumentException e) {
+            throw e;
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to open bucket", e);
+        }
     }
 }
