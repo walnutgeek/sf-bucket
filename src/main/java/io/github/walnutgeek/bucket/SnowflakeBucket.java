@@ -6,6 +6,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -67,7 +68,20 @@ class SnowflakeBucket implements Bucket {
 
     @Override
     public List<String> listNames() {
-        throw new UnsupportedOperationException("Not yet implemented");
+        String sql = "SELECT name FROM bucket_entries WHERE bucket_id = ? ORDER BY name";
+        List<String> names = new ArrayList<>();
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, id.toString());
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    names.add(rs.getString("name"));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to list entries", e);
+        }
+        return names;
     }
 
     @Override

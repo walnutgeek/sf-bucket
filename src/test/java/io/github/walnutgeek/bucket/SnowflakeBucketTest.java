@@ -3,6 +3,7 @@ package io.github.walnutgeek.bucket;
 import org.junit.jupiter.api.Test;
 
 import javax.sql.DataSource;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -49,5 +50,27 @@ class SnowflakeBucketTest {
         bucket.write("file.txt", null);
 
         assertNull(bucket.load("file.txt"));
+    }
+
+    @Test
+    void listNames_returnsAllNames_sorted() {
+        Bucket bucket = createTestBucket();
+
+        bucket.write("zebra.txt", "z");
+        bucket.write("alpha.txt", "a");
+        bucket.write("middle/path.csv", "m");
+
+        List<String> names = bucket.listNames();
+
+        assertEquals(List.of("alpha.txt", "middle/path.csv", "zebra.txt"), names);
+    }
+
+    @Test
+    void listNames_emptyBucket_returnsEmptyList() {
+        Bucket bucket = createTestBucket();
+
+        List<String> names = bucket.listNames();
+
+        assertTrue(names.isEmpty());
     }
 }
