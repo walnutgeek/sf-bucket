@@ -94,17 +94,30 @@ public interface BucketDAO {
 
 ## Implementation
 
+### Concurrency and Connection Model
+
+- **Not thread-safe**: concurrent writes to the same bucket/key are not supported. Callers are responsible for serialization if needed.
+- **Connection-per-operation**: each method call obtains a connection from the DataSource and closes it when done (try-with-resources). No connection reuse across calls.
+- **No explicit transactions**: each operation is a single statement (or two for upsert). The upsert's UPDATE-then-INSERT may race under concurrent access, but this is acceptable given the single-threaded contract above.
+
+### Input Validation
+
+- `name` must not be null in `load()` and `write()` — throw `NullPointerException` if null.
+- `createdBy` must not be null in `create()` — throw `NullPointerException` if null.
+- Empty strings are allowed (they are valid values).
+- No other Java-level validation; database constraints provide the backstop.
+
 ### SnowflakeBucketDAO
 
 - Constructor takes `javax.sql.DataSource`
-- `create(createdBy, description)`: generates UUID, INSERTs into `buckets`, returns `SnowflakeBucket`
+- `create(createdBy, description)`: generates UUID, sets `createdAt` to `Instant.now()`, INSERTs all four columns (id, created_by, description, created_at) explicitly into `buckets`, and uses the same `createdAt` value for the returned `SnowflakeBucket`. The DB default for `created_at` is not relied upon.
 - `open(id)`: SELECTs from `buckets`, throws `IllegalArgumentException` if not found, returns `SnowflakeBucket`
 
 ### SnowflakeBucket
 
-- Constructor takes `DataSource` + bucket metadata (id, createdBy, description, createdAt)
+- Package-private constructor takes `DataSource` + bucket metadata (id, createdBy, description, createdAt). Only `SnowflakeBucketDAO` creates instances.
 - `load(name)`: `SELECT content FROM bucket_entries WHERE bucket_id = ? AND name = ?` — returns `null` if no row
-- `listNames()`: `SELECT name FROM bucket_entries WHERE bucket_id = ?`
+- `listNames()`: `SELECT name FROM bucket_entries WHERE bucket_id = ? ORDER BY name` — ordered alphabetically
 - `write(name, content)`:
   - If content is null: `DELETE FROM bucket_entries WHERE bucket_id = ? AND name = ?`
   - If content is non-null: UPDATE first, check affected rows, INSERT if zero rows updated (portable upsert, no MERGE)
@@ -134,9 +147,17 @@ src/test/resources/
 
 ### Strategy
 
-H2 in-memory database integration tests. Each test gets a clean database state. The same SQL operations work against both H2 and Snowflake since we use portable SQL (no MERGE).
+H2 in-memory database integration tests. **Fresh H2 database per test method** using unique JDBC URLs (`jdbc:h2:mem:<unique>;DB_CLOSE_DELAY=-1`). This avoids cleanup ordering issues with the foreign key constraint.
 
-H2-compatible DDL in `src/test/resources/h2-init.sql` mirrors the Snowflake schema with minor type adjustments (e.g., `TIMESTAMP` instead of `TIMESTAMP_NTZ`).
+The same SQL operations work against both H2 and Snowflake since we use portable SQL (no MERGE).
+
+### H2 DDL Adjustments (`h2-init.sql`)
+
+The H2 DDL mirrors the Snowflake schema with these adjustments:
+- `TIMESTAMP_NTZ` → `TIMESTAMP`
+- `DEFAULT CURRENT_TIMESTAMP()` → `DEFAULT CURRENT_TIMESTAMP` (H2 syntax)
+- `VARCHAR(16777216)` → `CLOB` (H2 handles large text better as CLOB, though large VARCHAR also works)
+- Foreign key constraint kept as-is (H2 supports it)
 
 ### Test Cases
 
