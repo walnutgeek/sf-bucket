@@ -1,8 +1,13 @@
 package io.github.walnutgeek.bucket;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 class SnowflakeBucket implements Bucket {
@@ -43,7 +48,21 @@ class SnowflakeBucket implements Bucket {
 
     @Override
     public String load(String name) {
-        throw new UnsupportedOperationException("Not yet implemented");
+        Objects.requireNonNull(name, "name must not be null");
+        String sql = "SELECT content FROM bucket_entries WHERE bucket_id = ? AND name = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, id.toString());
+            ps.setString(2, name);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("content");
+                }
+                return null;
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to load entry: " + name, e);
+        }
     }
 
     @Override
@@ -53,6 +72,43 @@ class SnowflakeBucket implements Bucket {
 
     @Override
     public void write(String name, String content) {
-        throw new UnsupportedOperationException("Not yet implemented");
+        Objects.requireNonNull(name, "name must not be null");
+        if (content == null) {
+            delete(name);
+            return;
+        }
+        String updateSql = "UPDATE bucket_entries SET content = ? WHERE bucket_id = ? AND name = ?";
+        String insertSql = "INSERT INTO bucket_entries (bucket_id, name, content) VALUES (?, ?, ?)";
+        try (Connection conn = dataSource.getConnection()) {
+            try (PreparedStatement ps = conn.prepareStatement(updateSql)) {
+                ps.setString(1, content);
+                ps.setString(2, id.toString());
+                ps.setString(3, name);
+                int updated = ps.executeUpdate();
+                if (updated > 0) {
+                    return;
+                }
+            }
+            try (PreparedStatement ps = conn.prepareStatement(insertSql)) {
+                ps.setString(1, id.toString());
+                ps.setString(2, name);
+                ps.setString(3, content);
+                ps.executeUpdate();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to write entry: " + name, e);
+        }
+    }
+
+    private void delete(String name) {
+        String sql = "DELETE FROM bucket_entries WHERE bucket_id = ? AND name = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, id.toString());
+            ps.setString(2, name);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to delete entry: " + name, e);
+        }
     }
 }
