@@ -30,4 +30,24 @@ class SnowflakeBucketTest {
 
         assertNull(bucket.load("does/not/exist.txt"));
     }
+
+    @Test
+    void write_overwrite_replacesContent() {
+        Bucket bucket = createTestBucket();
+
+        bucket.write("file.txt", "original");
+        bucket.write("file.txt", "updated");
+
+        assertEquals("updated", bucket.load("file.txt"));
+    }
+
+    @Test
+    void write_nullContent_deletesEntry() {
+        Bucket bucket = createTestBucket();
+
+        bucket.write("file.txt", "content");
+        bucket.write("file.txt", null);
+
+        assertNull(bucket.load("file.txt"));
+    }
 }
