@@ -57,7 +57,7 @@ class SnowflakeBucket implements Bucket {
             ps.setString(2, name);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    return rs.getString("content");
+                    return rs.getString(1);
                 }
                 return null;
             }
@@ -75,7 +75,7 @@ class SnowflakeBucket implements Bucket {
             ps.setString(1, id.toString());
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    names.add(rs.getString("name"));
+                    names.add(rs.getString(1));
                 }
             }
         } catch (SQLException e) {

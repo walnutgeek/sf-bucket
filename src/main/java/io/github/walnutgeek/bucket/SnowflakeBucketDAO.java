@@ -49,10 +49,10 @@ public class SnowflakeBucketDAO implements BucketDAO {
                 }
                 return new SnowflakeBucket(
                     dataSource,
-                    UUID.fromString(rs.getString("id")),
-                    rs.getString("created_by"),
-                    rs.getString("description"),
-                    rs.getTimestamp("created_at").toInstant()
+                    UUID.fromString(rs.getString(1)),
+                    rs.getString(2),
+                    rs.getString(3),
+                    rs.getTimestamp(4).toInstant()
                 );
             }
         } catch (IllegalArgumentException e) {
