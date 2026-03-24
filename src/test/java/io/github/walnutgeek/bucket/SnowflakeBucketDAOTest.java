@@ -1,16 +1,16 @@
 package io.github.walnutgeek.bucket;
 
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 import javax.sql.DataSource;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.Assert.*;
 
-class SnowflakeBucketDAOTest {
+public class SnowflakeBucketDAOTest {
 
     @Test
-    void create_returnsBucketWithCorrectMetadata() {
+    public void create_returnsBucketWithCorrectMetadata() {
         DataSource ds = H2TestHelper.createDataSource();
         BucketDAO dao = new SnowflakeBucketDAO(ds);
 
@@ -22,16 +22,16 @@ class SnowflakeBucketDAOTest {
         assertNotNull(bucket.getCreatedAt());
     }
 
-    @Test
-    void create_withNullCreatedBy_throwsNPE() {
+    @Test(expected = NullPointerException.class)
+    public void create_withNullCreatedBy_throwsNPE() {
         DataSource ds = H2TestHelper.createDataSource();
         BucketDAO dao = new SnowflakeBucketDAO(ds);
 
-        assertThrows(NullPointerException.class, () -> dao.create(null, "desc"));
+        dao.create(null, "desc");
     }
 
     @Test
-    void open_withValidId_returnsBucketWithCorrectMetadata() {
+    public void open_withValidId_returnsBucketWithCorrectMetadata() {
         DataSource ds = H2TestHelper.createDataSource();
         BucketDAO dao = new SnowflakeBucketDAO(ds);
         Bucket created = dao.create("testuser", "my bucket");
@@ -44,12 +44,11 @@ class SnowflakeBucketDAOTest {
         assertNotNull(opened.getCreatedAt());
     }
 
-    @Test
-    void open_withUnknownId_throwsException() {
+    @Test(expected = IllegalArgumentException.class)
+    public void open_withUnknownId_throwsException() {
         DataSource ds = H2TestHelper.createDataSource();
         BucketDAO dao = new SnowflakeBucketDAO(ds);
 
-        assertThrows(IllegalArgumentException.class,
-            () -> dao.open(UUID.randomUUID()));
+        dao.open(UUID.randomUUID());
     }
 }

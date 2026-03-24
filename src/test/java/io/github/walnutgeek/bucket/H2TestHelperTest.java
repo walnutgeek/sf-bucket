@@ -1,6 +1,6 @@
 package io.github.walnutgeek.bucket;
 
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -8,12 +8,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.Assert.*;
 
-class H2TestHelperTest {
+public class H2TestHelperTest {
 
     @Test
-    void createDataSource_createsTables() throws SQLException {
+    public void createDataSource_createsTables() throws SQLException {
         DataSource ds = H2TestHelper.createDataSource();
         try (Connection conn = ds.getConnection();
              Statement stmt = conn.createStatement();

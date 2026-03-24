@@ -1,13 +1,14 @@
 package io.github.walnutgeek.bucket;
 
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 import javax.sql.DataSource;
+import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.Assert.*;
 
-class SnowflakeBucketTest {
+public class SnowflakeBucketTest {
 
     private Bucket createTestBucket() {
         DataSource ds = H2TestHelper.createDataSource();
@@ -16,7 +17,7 @@ class SnowflakeBucketTest {
     }
 
     @Test
-    void write_and_load_roundTrip() {
+    public void write_and_load_roundTrip() {
         Bucket bucket = createTestBucket();
 
         bucket.write("config/app.properties", "key=value");
@@ -26,14 +27,14 @@ class SnowflakeBucketTest {
     }
 
     @Test
-    void load_nonexistentName_returnsNull() {
+    public void load_nonexistentName_returnsNull() {
         Bucket bucket = createTestBucket();
 
         assertNull(bucket.load("does/not/exist.txt"));
     }
 
     @Test
-    void write_overwrite_replacesContent() {
+    public void write_overwrite_replacesContent() {
         Bucket bucket = createTestBucket();
 
         bucket.write("file.txt", "original");
@@ -43,7 +44,7 @@ class SnowflakeBucketTest {
     }
 
     @Test
-    void write_nullContent_deletesEntry() {
+    public void write_nullContent_deletesEntry() {
         Bucket bucket = createTestBucket();
 
         bucket.write("file.txt", "content");
@@ -53,7 +54,7 @@ class SnowflakeBucketTest {
     }
 
     @Test
-    void listNames_returnsAllNames_sorted() {
+    public void listNames_returnsAllNames_sorted() {
         Bucket bucket = createTestBucket();
 
         bucket.write("zebra.txt", "z");
@@ -62,11 +63,11 @@ class SnowflakeBucketTest {
 
         List<String> names = bucket.listNames();
 
-        assertEquals(List.of("alpha.txt", "middle/path.csv", "zebra.txt"), names);
+        assertEquals(Arrays.asList("alpha.txt", "middle/path.csv", "zebra.txt"), names);
     }
 
     @Test
-    void listNames_emptyBucket_returnsEmptyList() {
+    public void listNames_emptyBucket_returnsEmptyList() {
         Bucket bucket = createTestBucket();
 
         List<String> names = bucket.listNames();
