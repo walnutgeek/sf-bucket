@@ -51,19 +51,20 @@ mvn test       # run tests (uses H2 in-memory database)
 mvn package    # build jar
 ```
 
-Requires Java 17+ and Maven.
+Requires Java 8+ and Maven.
 
 ## Dependencies
 
 | Dependency | Version | Scope |
 |---|---|---|
 | `net.snowflake:snowflake-jdbc` | 3.13.6 | provided |
-| `com.h2database:h2` | 2.2.224 | test |
-| `org.junit.jupiter:junit-jupiter` | 5.10.2 | test |
+| `com.h2database:h2` | 1.4.200 | test |
+| `junit:junit` | 4.11 | test |
 
 ## Design Decisions
 
 - **Connection-per-operation**: each method call gets its own JDBC connection from the DataSource and closes it when done
+- **Explicit commit**: auto-commit is disabled; all write operations (insert, update, delete) commit explicitly on success
 - **Portable upsert**: `write()` uses UPDATE-then-INSERT instead of MERGE for H2/Snowflake compatibility
 - **Not thread-safe**: callers are responsible for serialization if needed
 - **UUID as VARCHAR(36)**: Snowflake has no native UUID type
@@ -72,6 +73,11 @@ Requires Java 17+ and Maven.
 
 | Commit | Description |
 |---|---|
+| `9733d40` | Add explicit commit after all write operations |
+| `b070ab7` | Use column indices instead of names in ResultSet access (Snowflake compatibility) |
+| `d36f3eb` | Make project Java 1.8 compatible (downgrade H2 to 1.4.200) |
+| `960e491` | Switch from JUnit 5 to JUnit 4.11 |
+| `4989d5b` | Add README, MIT license, and .gitignore |
 | `6ff923e` | Implement `Bucket.listNames()` — returns entry names sorted alphabetically |
 | `2145a13` | Add test cases for write overwrite and write-null-to-delete |
 | `1eafb82` | Implement `Bucket.write()` and `load()` — UPDATE-then-INSERT upsert, null deletes |
