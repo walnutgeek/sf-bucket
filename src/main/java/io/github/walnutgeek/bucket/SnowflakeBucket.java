@@ -94,12 +94,14 @@ class SnowflakeBucket implements Bucket {
         String updateSql = "UPDATE bucket_entries SET content = ? WHERE bucket_id = ? AND name = ?";
         String insertSql = "INSERT INTO bucket_entries (bucket_id, name, content) VALUES (?, ?, ?)";
         try (Connection conn = dataSource.getConnection()) {
+            conn.setAutoCommit(false);
             try (PreparedStatement ps = conn.prepareStatement(updateSql)) {
                 ps.setString(1, content);
                 ps.setString(2, id.toString());
                 ps.setString(3, name);
                 int updated = ps.executeUpdate();
                 if (updated > 0) {
+                    conn.commit();
                     return;
                 }
             }
@@ -109,6 +111,7 @@ class SnowflakeBucket implements Bucket {
                 ps.setString(3, content);
                 ps.executeUpdate();
             }
+            conn.commit();
         } catch (SQLException e) {
             throw new RuntimeException("Failed to write entry: " + name, e);
         }
@@ -116,11 +119,14 @@ class SnowflakeBucket implements Bucket {
 
     private void delete(String name) {
         String sql = "DELETE FROM bucket_entries WHERE bucket_id = ? AND name = ?";
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, id.toString());
-            ps.setString(2, name);
-            ps.executeUpdate();
+        try (Connection conn = dataSource.getConnection()) {
+            conn.setAutoCommit(false);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setString(1, id.toString());
+                ps.setString(2, name);
+                ps.executeUpdate();
+            }
+            conn.commit();
         } catch (SQLException e) {
             throw new RuntimeException("Failed to delete entry: " + name, e);
         }

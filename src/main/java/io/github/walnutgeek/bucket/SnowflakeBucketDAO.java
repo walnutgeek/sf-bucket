@@ -24,13 +24,16 @@ public class SnowflakeBucketDAO implements BucketDAO {
         UUID id = UUID.randomUUID();
         Instant createdAt = Instant.now();
         String sql = "INSERT INTO buckets (id, created_by, description, created_at) VALUES (?, ?, ?, ?)";
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, id.toString());
-            ps.setString(2, createdBy);
-            ps.setString(3, description);
-            ps.setTimestamp(4, Timestamp.from(createdAt));
-            ps.executeUpdate();
+        try (Connection conn = dataSource.getConnection()) {
+            conn.setAutoCommit(false);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setString(1, id.toString());
+                ps.setString(2, createdBy);
+                ps.setString(3, description);
+                ps.setTimestamp(4, Timestamp.from(createdAt));
+                ps.executeUpdate();
+            }
+            conn.commit();
         } catch (SQLException e) {
             throw new RuntimeException("Failed to create bucket", e);
         }
