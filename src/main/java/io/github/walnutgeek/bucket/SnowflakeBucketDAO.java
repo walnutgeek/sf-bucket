@@ -3,6 +3,7 @@ package io.github.walnutgeek.bucket;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -42,7 +43,7 @@ public class SnowflakeBucketDAO implements BucketDAO {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, id.toString());
-            try (var rs = ps.executeQuery()) {
+            try (ResultSet rs = ps.executeQuery()) {
                 if (!rs.next()) {
                     throw new IllegalArgumentException("Bucket not found: " + id);
                 }

@@ -38,7 +38,13 @@ public class H2TestHelper {
             if (is == null) {
                 throw new RuntimeException("Resource not found: " + name);
             }
-            return new String(is.readAllBytes(), StandardCharsets.UTF_8);
+            byte[] buf = new byte[4096];
+            int len;
+            java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+            while ((len = is.read(buf)) != -1) {
+                out.write(buf, 0, len);
+            }
+            return out.toString(StandardCharsets.UTF_8.name());
         } catch (IOException e) {
             throw new RuntimeException("Failed to load resource: " + name, e);
         }
